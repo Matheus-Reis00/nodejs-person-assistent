@@ -17,11 +17,6 @@ export class DespesasService {
             mes = mes.replace("0", "")
         }
 
-        console.log(despesas)
-        console.log(user_id)
-        console.log(mes)
-        console.log(ano)
-
         return despesas?.filter((despesa) => despesa?.user_id[0] == user_id && ((despesa?.mes[0] == mes && despesa?.ano[0] == ano) || despesa?.total_parcelas[0] == 'fixa'))?.map((despesa) => {
             return {
                 id: despesa?.id[0],
@@ -104,7 +99,7 @@ export class DespesasService {
         // @ts-ignore
         const despesas: any = await this.sheetsService.readSheet(database)
 
-        const despesasParceladas: any[] = []
+        let despesasParceladas: any[] = []
 
         despesas.forEach((despesa, index) => {
             if (despesa.id[0] === despesaToEdit.id) {
@@ -112,8 +107,19 @@ export class DespesasService {
             }
         })
 
+        despesasParceladas = despesasParceladas.map(([despesa, index]) => {
+            const formatedDespesa = Object.keys(despesa).reduce((acc, key) => {
+                acc[key] = despesa[key][0]
+                return acc
+            }, {} as despesaCampos)
+
+            return [formatedDespesa, index]
+        })
+
+        console.log(despesasParceladas)
+
         return await Promise.all(despesasParceladas.map(([despesa, index]) => {
-            return this.sheetsService.updateCell(database, index + 2, this.mountDataToSheet(despesaToEdit));
+            return this.sheetsService.updateCell(database, index + 2, this.mountDataToSheet({ ...despesa, valor_parcela: despesaToEdit.valor_parcela, valor_total: despesaToEdit.valor_total }));
         }))
     }
 }

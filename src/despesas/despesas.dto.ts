@@ -48,6 +48,13 @@ export class CreateDespesaDto {
   despesa: DespesaDto;
 }
 
+export class EditDespesaDto {
+  @ValidateNested()
+  @IsNotEmpty()
+  @Type(() => DespesaDto)
+  despesa: DespesaDto;
+}
+
 export const MesReferencia = createParamDecorator(
   (data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();

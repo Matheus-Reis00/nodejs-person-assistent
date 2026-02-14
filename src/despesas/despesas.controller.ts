@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, Get, HttpCode, HttpStatus, Post, Put, Query, UsePipes, ValidationPipe } from '@nestjs/common';
-import { CreateDespesaDto, MesReferencia } from './despesas.dto';
+import { CreateDespesaDto, EditDespesaDto, MesReferencia } from './despesas.dto';
 import { DespesasService } from './despesas.service';
 
 @Controller('despesas')
@@ -32,8 +32,11 @@ export class DespesasController {
     @HttpCode(HttpStatus.OK)
     @UsePipes(new ValidationPipe({ whitelist: true }))
     async updateDespesa(
-        @Body() body: CreateDespesaDto
+        @Body() body: EditDespesaDto
     ): Promise<any> {
-        return this.despesaService.editDespesa("Despesas", body.despesa)
+        if (Number(body.despesa.total_parcelas) > 1) {
+            return await this.despesaService.editDespesaParcelada("Despesas", body.despesa)
+        }
+        return await this.despesaService.editDespesa("Despesas", body.despesa)
     }
 }
