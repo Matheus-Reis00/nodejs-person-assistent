@@ -99,10 +99,10 @@ export class SheetsService {
         return { message: `Coluna "${columnTitle}" adicionada com sucesso.` };
     }
 
-    async addRow(sheetName: sheetNames, rowData: despesaCampos | usuarioCampos): Promise<any> {
+    async addRow(sheetName: sheetNames, rowData: despesaCampos | usuarioCampos, idNewElement?: string): Promise<any> {
         const range = `${sheetName}`;
 
-        const timesStampId = new Date().getTime()
+        const timesStampId = idNewElement || new Date().getTime()
 
         const response = await this.sheets.spreadsheets.values.append({
             spreadsheetId: this.spreadsheetId,

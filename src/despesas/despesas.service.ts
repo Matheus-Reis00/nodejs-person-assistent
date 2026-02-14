@@ -26,7 +26,7 @@ export class DespesasService {
             return {
                 id: despesa?.id[0],
                 user_id: despesa?.user_id[0],
-                titulo: despesa?.title[0],
+                title: despesa?.title[0],
                 tipo_pagamento: despesa?.tipo_pagamento[0],
                 mes: despesa?.mes[0],
                 ano: despesa?.ano[0],
@@ -41,6 +41,7 @@ export class DespesasService {
     async addToDatabase(database: string, despesaToCreate: despesaCampos): Promise<any> {
         // @ts-ignore
         if (!isNaN(despesaToCreate?.total_parcelas) && parseInt(despesaToCreate.total_parcelas) > 1) {
+            const idNewElement = new Date().getTime().toString()
             const promises = Array.from({ length: parseInt(despesaToCreate.total_parcelas) }).map(async (_, index) => {
                 let mes = despesaToCreate.mes
                 let ano = despesaToCreate.ano
@@ -62,7 +63,8 @@ export class DespesasService {
 
                 return this.sheetsService.addRow(
                     database,
-                    { ...despesaToCreate, mes: mes, ano: ano, parcela_atual: parcela_atual.toString() }
+                    { ...despesaToCreate, mes: mes, ano: ano, parcela_atual: parcela_atual.toString() },
+                    idNewElement
                 );
             })
 
@@ -96,5 +98,22 @@ export class DespesasService {
         }
 
         throw new Error('Despesa não encontrada')
+    }
+
+    async editDespesaParcelada(database: string, despesaToEdit: despesaCampos): Promise<any> {
+        // @ts-ignore
+        const despesas: any = await this.sheetsService.readSheet(database)
+
+        const despesasParceladas: any[] = []
+
+        despesas.forEach((despesa, index) => {
+            if (despesa.id[0] === despesaToEdit.id) {
+                despesasParceladas.push([despesa, index])
+            }
+        })
+
+        return await Promise.all(despesasParceladas.map(([despesa, index]) => {
+            return this.sheetsService.updateCell(database, index + 2, this.mountDataToSheet(despesaToEdit));
+        }))
     }
 }
