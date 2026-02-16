@@ -122,4 +122,8 @@ export class DespesasService {
             return this.sheetsService.updateCell(database, index + 2, this.mountDataToSheet({ ...despesa, valor_parcela: despesaToEdit.valor_parcela, valor_total: despesaToEdit.valor_total }));
         }))
     }
+
+    async remove(id: string): Promise<any> {
+        return await this.sheetsService.deleteRows("Despesas", id);
+    }
 }

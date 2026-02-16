@@ -22,6 +22,14 @@ export type usuarioCampos = {
     password: string
 }
 
+export type cartaoCampos = {
+    id: string
+    user_id: string
+    name: string
+    slug: string
+    dia_vencimento: number
+}
+
 @Injectable()
 export class SheetsService {
     private spreadsheetId = '1uEOPY_YN99RkT3S4IpSuy3EXEoOEfs3lMNGbsf4leJ0'
@@ -99,10 +107,35 @@ export class SheetsService {
         return { message: `Coluna "${columnTitle}" adicionada com sucesso.` };
     }
 
-    async addRow(sheetName: sheetNames, rowData: despesaCampos | usuarioCampos, idNewElement?: string): Promise<any> {
+    async addRow(sheetName: sheetNames, rowData: despesaCampos | usuarioCampos | cartaoCampos, idNewElement?: string): Promise<any> {
         const range = `${sheetName}`;
+        const timesStampId = idNewElement || new Date().getTime().toString();
 
-        const timesStampId = idNewElement || new Date().getTime()
+        let values: any[][] = [];
+
+        if ('password' in rowData) {
+            // Usuario
+            values = [[timesStampId, rowData.name, rowData.password]];
+        } else if (sheetName === 'Cartoes') {
+            // Cartao
+            const c = rowData as cartaoCampos;
+            values = [[timesStampId, c.user_id, c.name, c.slug, c.dia_vencimento]];
+        } else {
+            // Despesa
+            const d = rowData as despesaCampos;
+            values = [[
+                timesStampId,
+                d.user_id,
+                d.title,
+                d.tipo_pagamento,
+                d.mes,
+                d.ano,
+                d.total_parcelas,
+                d.parcela_atual,
+                d.valor_parcela,
+                d.valor_total || d.valor_parcela
+            ]];
+        }
 
         const response = await this.sheets.spreadsheets.values.append({
             spreadsheetId: this.spreadsheetId,
@@ -110,8 +143,7 @@ export class SheetsService {
             valueInputOption: 'RAW',
             insertDataOption: 'INSERT_ROWS',
             requestBody: {
-                // @ts-ignore
-                values: !!rowData?.password ? [[timesStampId, rowData?.name, rowData?.password]] : [[timesStampId, rowData?.user_id, rowData?.title, rowData?.tipo_pagamento, rowData?.mes, rowData?.ano, rowData?.total_parcelas, rowData?.parcela_atual, rowData?.valor_parcela, rowData?.valor_total || rowData?.valor_parcela]],
+                values,
             },
         });
 
@@ -119,6 +151,60 @@ export class SheetsService {
             message: 'Linha adicionada com sucesso.',
             updates: response.data.updates,
         };
+    }
+
+    async deleteRow(sheetName: sheetNames, id: string): Promise<any> {
+        return this.deleteRows(sheetName, id);
+    }
+
+    async deleteRows(sheetName: sheetNames, id: string): Promise<any> {
+        // Obter os dados atuais para encontrar os índices das linhas
+        const response = await this.sheets.spreadsheets.values.get({
+            spreadsheetId: this.spreadsheetId,
+            range: `${sheetName}!A:A`, // Só precisamos da primeira coluna (ID)
+        });
+
+        const rows = response.data.values || [];
+        const rowIndices = rows
+            .map((row, index) => (row[0] === id ? index : -1))
+            .filter(index => index !== -1)
+            .sort((a, b) => b - a); // Ordenar do maior para o menor para deletar sem mudar os índices das anteriores
+
+        if (rowIndices.length === 0) {
+            throw new Error('Registro não encontrado');
+        }
+
+        // Para deletar, precisamos do ID da aba (sheetId), não do nome
+        const sheetMetadata = await this.sheets.spreadsheets.get({
+            spreadsheetId: this.spreadsheetId,
+        });
+
+        const sheet = sheetMetadata.data.sheets?.find(s => s.properties?.title === sheetName);
+        if (!sheet) {
+            throw new Error('Aba não encontrada');
+        }
+
+        const sheetId = sheet.properties?.sheetId;
+
+        const requests = rowIndices.map(rowIndex => ({
+            deleteDimension: {
+                range: {
+                    sheetId: sheetId,
+                    dimension: 'ROWS',
+                    startIndex: rowIndex,
+                    endIndex: rowIndex + 1,
+                },
+            },
+        }));
+
+        await this.sheets.spreadsheets.batchUpdate({
+            spreadsheetId: this.spreadsheetId,
+            requestBody: {
+                requests,
+            },
+        });
+
+        return { message: `${rowIndices.length} linha(s) deletada(s) com sucesso.` };
     }
 
     async readSheet(sheetName: sheetNames): Promise<any[][]> {

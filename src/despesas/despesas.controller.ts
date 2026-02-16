@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, HttpCode, HttpStatus, Post, Put, Query, UsePipes, ValidationPipe } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Query, UsePipes, ValidationPipe } from '@nestjs/common';
 import { CreateDespesaDto, EditDespesaDto, MesReferencia } from './despesas.dto';
 import { DespesasService } from './despesas.service';
 
@@ -38,5 +38,11 @@ export class DespesasController {
             return await this.despesaService.editDespesaParcelada("Despesas", body.despesa)
         }
         return await this.despesaService.editDespesa("Despesas", body.despesa)
+    }
+
+    @Delete('/:id')
+    @HttpCode(HttpStatus.OK)
+    async deleteDespesa(@Param('id') id: string): Promise<any> {
+        return this.despesaService.remove(id)
     }
 }
