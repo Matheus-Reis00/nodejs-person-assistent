@@ -32,21 +32,21 @@ export type cartaoCampos = {
 
 @Injectable()
 export class SheetsService {
-    private spreadsheetId = '1uEOPY_YN99RkT3S4IpSuy3EXEoOEfs3lMNGbsf4leJ0'
+    private spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
     private sheets: sheets_v4.Sheets;
 
     constructor() {
         const credentials = {
             "type": "service_account",
-            "project_id": "smooth-command-462116-b3",
-            "private_key_id": "55cc6e92d61e524d234d8fb973cad62b873db4e2",
-            "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDtGDHQjB2sE1yp\nBmw1lw8GrDziVvIBomCrEGZgHeHOZL4UIz1uyI7ghk6f67CkFjM8CGKFnlx+nB48\ndduq1YfpiVvBwzhKQOf8BPqHHWg7TM2syIPFCE6bBGAksDuPvB2IhSRP9VmEBAzT\nczxjjIjUZg3/QxGdq1BnhYrbljQJ++vUf0Woe7t+Nx17K2KJFhz0B5F//xYVQ7i1\np4dNjEc4ecxIyK12jwAEvNBF871SwbQYgTqik6dxS05p8wgPVCnE4dK9SgY21+bC\n0B9SFg8eJW36D+wcUuha4BBxiJ2CL13JVkWYT9kHgIsNwnfabYsJeLxyL6gYFr3N\nBJOXe/XhAgMBAAECggEAAL/iRO6zd5A8W1GwkQMOLmsIGn5UP6hy8imALFq91HJl\ntjA2FRID3x53lEp5RYyHKw/6+UGK2PDfCNmFyTKJfmXTdR9sD7KItTeSD/AqLKFR\nl2OvJHXiMzviXq1Ss+GwLXa/ypOrzba6UGcRbF5k7ph3v/xHG4qvi3M88RSmi5dH\nbNyg7qxOvDQpzgsTK1GlV8ZQXF7BWgZIFKHftQdy3TlrtR6GvvL/YLDoGDc0VI4K\nnOCNdjJV1z6kBi8ApoEgRC6Uqb6C+EVT7MX0lvhv1OiOMldnmn9ziR0h/s3b+U9X\n0xcQlpW8tOt8B+PQHmsy0EaUFPofzovW21lzAsJMMQKBgQD3gVVzLDecJwJuNu+p\nnwfl32h0N9OIuS7zD/KRCItPfdxntz9bVSem/1mLpnddgMlbP/KASM52PNSOnMAi\nldr30G5uLc6B0owXMQFvAOpp0whq01xrU1+if9zfmumczNmqCZkXAiGkmTUo1evs\n2l4klJpMOBxLJ+RJZjHW1ACPcQKBgQD1O2OIIZ3kylGiHWImPcOSEn9I6wxPnssM\nBziFBgcLv4ObWUJw0aN87d55hntQSV0SmEGzyZxfDgdeLMUiKiGE+h9oyuJZB1X+\njT6aKv0Xi6iBO204KN92Ra71TH3C837GIkKPeSDLIkz9NXuPu8mcZCrVyToqTMNy\ns4PowY51cQKBgQDAXvwFiqambgOLmpNoqTzARIaxXfrCV/zP2uNUKunsnQzEaD+M\nQ4GQYQQ+cOJyAHmAvRFE+FHQwLMNLXSA7SzGVHCgnmXVrcpI9EQC/Rk1q1rtfN5m\nZOT+LpeEDKnqv6WmbdNZeMShZJtW4/59l7R4hi/vceU73QOosQ+nxBuzYQKBgFh0\nVn9o2MIItA9Ml/WBO8S5hU3w8lzZwxWQmTNqLCpxpu/m708wXs8WIbQl7N7Vx4uI\nfdJyu0OSFNhEP8sF9Vc4vRGYdLJ2Me+CVP1Y2jee+WW74LZsD8ZidiwmrgoeuDCR\ndP65SznaInkGzI3Yx2zwuH6qeZ9+VtVNqRvQjSkRAoGAPJxsYb0c7H1dusfZojfn\nFT+cNIGccFBb0FIn3iy2r/cV4JggUmgkBVOfTx2XuOqwf3uKvX3r/VgNSVodSYot\n6qlKRzazbopRThcOMBpgK7nfciw8omF3WbmCqecw/VQ4GBTz1Bv76lbprj6DGNRR\n/5qFJKJP4aKCHUlRHCZRXU0=\n-----END PRIVATE KEY-----\n",
-            "client_email": "person-assistent@smooth-command-462116-b3.iam.gserviceaccount.com",
-            "client_id": "102693856304293165383",
+            "project_id": process.env.GOOGLE_PROJECT_ID,
+            "private_key_id": process.env.GOOGLE_PRIVATE_KEY_ID,
+            "private_key": process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+            "client_email": process.env.GOOGLE_CLIENT_EMAIL,
+            "client_id": process.env.GOOGLE_CLIENT_ID,
             "auth_uri": "https://accounts.google.com/o/oauth2/auth",
             "token_uri": "https://oauth2.googleapis.com/token",
             "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/person-assistent%40smooth-command-462116-b3.iam.gserviceaccount.com",
+            "client_x509_cert_url": process.env.GOOGLE_CLIENT_X509_CERT_URL,
             "universe_domain": "googleapis.com"
         }
 
