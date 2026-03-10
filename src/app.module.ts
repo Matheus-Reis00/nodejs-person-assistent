@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { UtilsModule } from './utils/utils.module';
 import { UsersModule } from './users/users.module';
 import { DespesasModule } from './despesas/despesas.module';
 import { CartoesModule } from './cartoes/cartoes.module';
@@ -11,6 +12,7 @@ import { CartoesModule } from './cartoes/cartoes.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    UtilsModule,
     UsersModule,
     DespesasModule,
     CartoesModule,

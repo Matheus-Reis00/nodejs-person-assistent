@@ -3,8 +3,7 @@ import { SheetsService } from 'src/utils/Sheets';
 
 @Injectable()
 export class UsersService {
-    private sheetsService = new SheetsService()
-    constructor() {
+    constructor(private sheetsService: SheetsService) {
     }
 
     async getUserByName(userName: string, userPassword: string): Promise<any> {
@@ -19,7 +18,7 @@ export class UsersService {
             }
         }
 
-         throw new UnauthorizedException('Usuário não encontrado')
+        throw new UnauthorizedException('Usuário não encontrado')
     }
 
     async addToDatabase(database: string, userToCreate: { name: string, password: string }): Promise<any> {
@@ -32,7 +31,7 @@ export class UsersService {
                 { ...userToCreate, id: userToCreate.name }
             );
         }
-        
+
         return { status: 400, message: 'Usuário já existe' }
     }
 }

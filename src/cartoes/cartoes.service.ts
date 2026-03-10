@@ -4,8 +4,9 @@ import { CreateCartaoDto, UpdateCartaoDto } from './cartoes.dto';
 
 @Injectable()
 export class CartoesService {
-    private sheetsService = new SheetsService();
     private readonly sheetName = 'Cartoes';
+
+    constructor(private sheetsService: SheetsService) { }
 
     async findAllByUserId(user_id: string): Promise<cartaoCampos[]> {
         const data: any = await this.sheetsService.readSheet(this.sheetName);

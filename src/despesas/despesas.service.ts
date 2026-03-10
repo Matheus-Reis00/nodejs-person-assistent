@@ -3,8 +3,7 @@ import { despesaCampos, SheetsService } from 'src/utils/Sheets';
 
 @Injectable()
 export class DespesasService {
-    private sheetsService = new SheetsService()
-    constructor() {
+    constructor(private sheetsService: SheetsService) {
     }
 
     async listDespesasUser(user_id: string, mesReferencia: string): Promise<despesaCampos[]> {
