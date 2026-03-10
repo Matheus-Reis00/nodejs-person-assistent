@@ -37,39 +37,67 @@ export class SheetsService {
     private sheets: sheets_v4.Sheets;
 
     constructor(private configService: ConfigService) {
-        this.spreadsheetId = this.configService.get<string>('GOOGLE_SHEETS_SPREADSHEET_ID');
-
+        const spreadsheetId = this.configService.get<string>('GOOGLE_SHEETS_SPREADSHEET_ID');
+        const projectId = this.configService.get<string>('GOOGLE_PROJECT_ID');
+        const privateKeyId = this.configService.get<string>('GOOGLE_PRIVATE_KEY_ID');
         const privateKey = this.configService.get<string>('GOOGLE_PRIVATE_KEY');
+        const clientEmail = this.configService.get<string>('GOOGLE_CLIENT_EMAIL');
+        const clientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
+        const clientX509CertUrl = this.configService.get<string>('GOOGLE_CLIENT_X509_CERT_URL');
+
+        this.spreadsheetId = spreadsheetId;
+
+        // Verificação detalhada para o Render
+        const missingEnvs: string[] = [];
+        if (!spreadsheetId) missingEnvs.push('GOOGLE_SHEETS_SPREADSHEET_ID');
+        if (!projectId) missingEnvs.push('GOOGLE_PROJECT_ID');
+        if (!privateKey) missingEnvs.push('GOOGLE_PRIVATE_KEY');
+        if (!clientEmail) missingEnvs.push('GOOGLE_CLIENT_EMAIL');
+        if (!clientId) missingEnvs.push('GOOGLE_CLIENT_ID');
+
+        if (missingEnvs.length > 0) {
+            console.error(`[SheetsService] ERRO: As seguintes variáveis de ambiente estão FALTANDO: ${missingEnvs.join(', ')}`);
+            console.error('[SheetsService] Verifique a aba Environment no painel do Render.');
+        }
+
         const formattedPrivateKey = privateKey
-            ? privateKey.replace(/\\n/g, '\n').replace(/^"(.*)"$/, '$1') // Remove literal \n e aspas extras
+            ? privateKey.replace(/\\n/g, '\n').replace(/^"(.*)"$/, '$1').replace(/\\"/g, '"')
             : undefined;
 
         const credentials = {
-            "type": "service_account",
-            "project_id": this.configService.get<string>('GOOGLE_PROJECT_ID'),
-            "private_key_id": this.configService.get<string>('GOOGLE_PRIVATE_KEY_ID'),
-            "private_key": formattedPrivateKey,
-            "client_email": this.configService.get<string>('GOOGLE_CLIENT_EMAIL'),
-            "client_id": this.configService.get<string>('GOOGLE_CLIENT_ID'),
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "client_x509_cert_url": this.configService.get<string>('GOOGLE_CLIENT_X509_CERT_URL'),
-            "universe_domain": "googleapis.com"
+            type: "service_account",
+            project_id: projectId,
+            private_key_id: privateKeyId,
+            private_key: formattedPrivateKey,
+            client_email: clientEmail,
+            client_id: clientId,
+            auth_uri: "https://accounts.google.com/o/oauth2/auth",
+            token_uri: "https://oauth2.googleapis.com/token",
+            auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+            client_x509_cert_url: clientX509CertUrl,
+            universe_domain: "googleapis.com"
+        };
+
+        // Só tenta inicializar se tiver o básico para evitar o erro "does not contain a client_email field"
+        if (clientEmail && privateKey) {
+            try {
+                const auth = new google.auth.GoogleAuth({
+                    credentials,
+                    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+                });
+
+                auth.getClient().then((authClient: any) => {
+                    this.sheets = google.sheets({ version: 'v4', auth: authClient });
+                    console.log('[SheetsService] Autenticação com Google Sheets inicializada com sucesso.');
+                }).catch(err => {
+                    console.error('[SheetsService] Erro ao obter cliente Auth:', err.message);
+                });
+            } catch (err) {
+                console.error('[SheetsService] Erro crítico ao instanciar GoogleAuth:', err.message);
+            }
+        } else {
+            console.error('[SheetsService] Abortando inicialização do Google Auth por falta de credenciais.');
         }
-
-        if (!this.spreadsheetId || !privateKey) {
-            console.warn('Variáveis de ambiente do Google Sheets não foram totalmente carregadas. Verifique o Config do Render.');
-        }
-
-        const auth = new google.auth.GoogleAuth({
-            credentials,
-            scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-        });
-
-        auth.getClient().then((authClient: any) => {
-            this.sheets = google.sheets({ version: 'v4', auth: authClient });
-        });
     }
 
     async updateCell(sheetName: sheetNames, rowNumber: number, value: any[]) {
