@@ -50,19 +50,26 @@ export class SheetsService {
         // Verificação detalhada para o Render
         const missingEnvs: string[] = [];
         if (!spreadsheetId) missingEnvs.push('GOOGLE_SHEETS_SPREADSHEET_ID');
-        if (!projectId) missingEnvs.push('GOOGLE_PROJECT_ID');
         if (!privateKey) missingEnvs.push('GOOGLE_PRIVATE_KEY');
         if (!clientEmail) missingEnvs.push('GOOGLE_CLIENT_EMAIL');
-        if (!clientId) missingEnvs.push('GOOGLE_CLIENT_ID');
 
         if (missingEnvs.length > 0) {
             console.error(`[SheetsService] ERRO: As seguintes variáveis de ambiente estão FALTANDO: ${missingEnvs.join(', ')}`);
-            console.error('[SheetsService] Verifique a aba Environment no painel do Render.');
         }
 
-        const formattedPrivateKey = privateKey
-            ? privateKey.replace(/\\n/g, '\n').replace(/^"(.*)"$/, '$1').replace(/\\"/g, '"')
-            : undefined;
+        // Limpeza profunda da Private Key (Essencial para OpenSSL 3 no Render/Linux)
+        let formattedPrivateKey = privateKey;
+        if (formattedPrivateKey) {
+            formattedPrivateKey = formattedPrivateKey.trim();
+            // Remove aspas duplas externas se existirem
+            if (formattedPrivateKey.startsWith('"') && formattedPrivateKey.endsWith('"')) {
+                formattedPrivateKey = formattedPrivateKey.substring(1, formattedPrivateKey.length - 1);
+            }
+            // Converte \n literais (string) em quebras de linha reais
+            formattedPrivateKey = formattedPrivateKey.replace(/\\n/g, '\n');
+            // Remove escapes de aspas duplas internas
+            formattedPrivateKey = formattedPrivateKey.replace(/\\"/g, '"');
+        }
 
         const credentials = {
             type: "service_account",
@@ -78,25 +85,25 @@ export class SheetsService {
             universe_domain: "googleapis.com"
         };
 
-        // Só tenta inicializar se tiver o básico para evitar o erro "does not contain a client_email field"
-        if (clientEmail && privateKey) {
+        if (clientEmail && formattedPrivateKey) {
             try {
+                // Usando a forma síncrona de configuração para evitar que this.sheets fique indefinido
                 const auth = new google.auth.GoogleAuth({
                     credentials,
                     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
                 });
 
-                auth.getClient().then((authClient: any) => {
-                    this.sheets = google.sheets({ version: 'v4', auth: authClient });
-                    console.log('[SheetsService] Autenticação com Google Sheets inicializada com sucesso.');
-                }).catch(err => {
-                    console.error('[SheetsService] Erro ao obter cliente Auth:', err.message);
-                });
+                // Criamos o objeto sheets imediatamente usando o auth
+                this.sheets = google.sheets({ version: 'v4', auth });
+                console.log('[SheetsService] Google Sheets Client configurado.');
+
+                // Log de segurança para conferir o formato da chave (apenas metadados)
+                console.log(`[SheetsService] Key info: ${formattedPrivateKey.substring(0, 25)}... (Length: ${formattedPrivateKey.length})`);
             } catch (err) {
-                console.error('[SheetsService] Erro crítico ao instanciar GoogleAuth:', err.message);
+                console.error('[SheetsService] Erro ao configurar Google Auth:', err.message);
             }
         } else {
-            console.error('[SheetsService] Abortando inicialização do Google Auth por falta de credenciais.');
+            console.error('[SheetsService] Abortando: client_email ou private_key ausentes.');
         }
     }
 
