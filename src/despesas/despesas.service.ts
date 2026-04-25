@@ -125,4 +125,96 @@ export class DespesasService {
     async remove(id: string): Promise<any> {
         return await this.sheetsService.deleteRows("Despesas", id);
     }
+
+    async getRelatorioDetalhado(user_id: string, mesReferenciaInicio: string): Promise<any> {
+        const despesas: any = await this.sheetsService.readSheet("Despesas");
+        const anoInicio = parseInt(mesReferenciaInicio.split('-')[0]);
+        const mesInicio = parseInt(mesReferenciaInicio.split('-')[1]);
+        
+        const despesasUser = despesas?.filter((despesa: any) => despesa?.user_id?.[0] == user_id) || [];
+        
+        const mesesEAnosProcessar = new Set<string>();
+        
+        despesasUser.forEach((despesa: any) => {
+            if (despesa?.total_parcelas?.[0] !== 'fixa') {
+                const ano = parseInt(despesa?.ano?.[0]);
+                const mes = parseInt(despesa?.mes?.[0]);
+                if (ano > anoInicio || (ano === anoInicio && mes >= mesInicio)) {
+                    mesesEAnosProcessar.add(`${ano}-${mes.toString().padStart(2, '0')}`);
+                }
+            }
+        });
+        
+        let mesesList = Array.from(mesesEAnosProcessar).sort();
+        if (mesesList.length === 0) {
+            mesesList = [`${anoInicio}-${mesInicio.toString().padStart(2, '0')}`];
+        } else {
+            const limitStr = mesesList[mesesList.length - 1];
+            const limitAno = parseInt(limitStr.split('-')[0]);
+            const limitMes = parseInt(limitStr.split('-')[1]);
+            
+            mesesList = [];
+            let currAno = anoInicio;
+            let currMes = mesInicio;
+            while(currAno < limitAno || (currAno === limitAno && currMes <= limitMes)) {
+                mesesList.push(`${currAno}-${currMes.toString().padStart(2, '0')}`);
+                currMes++;
+                if (currMes > 12) {
+                    currMes = 1;
+                    currAno++;
+                }
+            }
+        }
+        
+        const resultadoFinal: any[] = [];
+        
+        for (const mesAno of mesesList) {
+            const [anoStr, mesStr] = mesAno.split('-');
+            const anoNum = parseInt(anoStr);
+            const mesNum = parseInt(mesStr);
+            
+            const despesasNesteMes = despesasUser.filter((despesa: any) => {
+                const isFixa = despesa?.total_parcelas?.[0] === 'fixa';
+                if (isFixa) return true;
+                
+                return parseInt(despesa?.ano?.[0]) === anoNum && parseInt(despesa?.mes?.[0]) === mesNum;
+            });
+            
+            const porFormaPagamento: Record<string, any> = {};
+            let total_consolidado_mes = 0;
+            
+            despesasNesteMes.forEach((despesa: any) => {
+                const tipo = despesa?.tipo_pagamento?.[0] || 'Outros';
+                
+                const valor_parcela = parseFloat(despesa?.valor_parcela?.[0] === 'fixa' ? despesa?.valor_total?.[0] : despesa?.valor_parcela?.[0]) || 0;
+                
+                if (!porFormaPagamento[tipo]) {
+                    porFormaPagamento[tipo] = {
+                        tipo_pagamento: tipo,
+                        total_tipo: 0,
+                        despesas: []
+                    };
+                }
+                
+                porFormaPagamento[tipo].total_tipo += valor_parcela;
+                total_consolidado_mes += valor_parcela;
+                
+                porFormaPagamento[tipo].despesas.push({
+                    id: despesa?.id?.[0],
+                    title: despesa?.title?.[0],
+                    valor_parcela: valor_parcela,
+                    total_parcelas: despesa?.total_parcelas?.[0],
+                    parcela_atual: despesa?.parcela_atual?.[0],
+                });
+            });
+            
+            resultadoFinal.push({
+                mesReferencia: mesAno,
+                total_consolidado: total_consolidado_mes,
+                formas_pagamento: Object.values(porFormaPagamento)
+            });
+        }
+        
+        return resultadoFinal;
+    }
 }

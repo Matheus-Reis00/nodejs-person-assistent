@@ -8,6 +8,17 @@ export class DespesasController {
         private readonly despesaService: DespesasService
     ) { }
 
+    @Get('/relatorio-detalhado')
+    @HttpCode(HttpStatus.OK)
+    @UsePipes(new ValidationPipe({ whitelist: true }))
+    async getRelatorioDetalhado(@MesReferencia('mes-referencia') mesReferencia: string, @Query("user_id") user_id: string): Promise<any> {
+        if (!user_id) {
+            throw new BadRequestException('O parâmetro "user_id" é obrigatório.');
+        }
+
+        return this.despesaService.getRelatorioDetalhado(user_id, mesReferencia);
+    }
+
     @Get('/')
     @HttpCode(HttpStatus.OK)
     @UsePipes(new ValidationPipe({ whitelist: true }))
