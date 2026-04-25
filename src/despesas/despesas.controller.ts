@@ -11,12 +11,19 @@ export class DespesasController {
     @Get('/relatorio-detalhado')
     @HttpCode(HttpStatus.OK)
     @UsePipes(new ValidationPipe({ whitelist: true }))
-    async getRelatorioDetalhado(@MesReferencia('mes-referencia') mesReferencia: string, @Query("user_id") user_id: string): Promise<any> {
+    async getRelatorioDetalhado(@MesReferencia('mes-referencia') mesReferencia: string, @Query("user_id") user_id: string, @Query("mes-referencia-fim") mesReferenciaFim?: string): Promise<any> {
         if (!user_id) {
             throw new BadRequestException('O parâmetro "user_id" é obrigatório.');
         }
 
-        return this.despesaService.getRelatorioDetalhado(user_id, mesReferencia);
+        if (mesReferenciaFim) {
+            const regex = /^\d{4}-(0[1-9]|1[0-2])$/;
+            if (!regex.test(mesReferenciaFim)) {
+                throw new BadRequestException('O parâmetro "mes-referencia-fim" deve estar no formato YYYY-MM (ex: 2025-08)');
+            }
+        }
+
+        return this.despesaService.getRelatorioDetalhado(user_id, mesReferencia, mesReferenciaFim);
     }
 
     @Get('/')

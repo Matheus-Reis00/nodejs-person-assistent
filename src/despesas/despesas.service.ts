@@ -126,7 +126,7 @@ export class DespesasService {
         return await this.sheetsService.deleteRows("Despesas", id);
     }
 
-    async getRelatorioDetalhado(user_id: string, mesReferenciaInicio: string): Promise<any> {
+    async getRelatorioDetalhado(user_id: string, mesReferenciaInicio: string, mesReferenciaFim?: string): Promise<any> {
         const despesas: any = await this.sheetsService.readSheet("Despesas");
         const anoInicio = parseInt(mesReferenciaInicio.split('-')[0]);
         const mesInicio = parseInt(mesReferenciaInicio.split('-')[1]);
@@ -145,24 +145,33 @@ export class DespesasService {
             }
         });
         
-        let mesesList = Array.from(mesesEAnosProcessar).sort();
-        if (mesesList.length === 0) {
-            mesesList = [`${anoInicio}-${mesInicio.toString().padStart(2, '0')}`];
+        let limitAno: number;
+        let limitMes: number;
+
+        if (mesReferenciaFim) {
+            limitAno = parseInt(mesReferenciaFim.split('-')[0]);
+            limitMes = parseInt(mesReferenciaFim.split('-')[1]);
         } else {
-            const limitStr = mesesList[mesesList.length - 1];
-            const limitAno = parseInt(limitStr.split('-')[0]);
-            const limitMes = parseInt(limitStr.split('-')[1]);
-            
-            mesesList = [];
-            let currAno = anoInicio;
-            let currMes = mesInicio;
-            while(currAno < limitAno || (currAno === limitAno && currMes <= limitMes)) {
-                mesesList.push(`${currAno}-${currMes.toString().padStart(2, '0')}`);
-                currMes++;
-                if (currMes > 12) {
-                    currMes = 1;
-                    currAno++;
-                }
+            const mesesList = Array.from(mesesEAnosProcessar).sort();
+            if (mesesList.length === 0) {
+                limitAno = anoInicio;
+                limitMes = mesInicio;
+            } else {
+                const limitStr = mesesList[mesesList.length - 1];
+                limitAno = parseInt(limitStr.split('-')[0]);
+                limitMes = parseInt(limitStr.split('-')[1]);
+            }
+        }
+
+        const mesesList: string[] = [];
+        let currAno = anoInicio;
+        let currMes = mesInicio;
+        while(currAno < limitAno || (currAno === limitAno && currMes <= limitMes)) {
+            mesesList.push(`${currAno}-${currMes.toString().padStart(2, '0')}`);
+            currMes++;
+            if (currMes > 12) {
+                currMes = 1;
+                currAno++;
             }
         }
         
